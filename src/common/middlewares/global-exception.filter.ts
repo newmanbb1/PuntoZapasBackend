@@ -7,7 +7,7 @@ import {
     Logger,
 } from '@nestjs/common';
 import { Response } from 'express';
-import { Prisma } from 'generated/prisma/client';
+import { Prisma } from '@prisma/client';
 
 @Catch() // Al no pasar argumentos, atrapa absolutamente TODOS los errores
 export class GlobalExceptionFilter implements ExceptionFilter {

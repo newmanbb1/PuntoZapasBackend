@@ -4,8 +4,7 @@
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -13,10 +12,10 @@ datasource db {
 }
 
 model Sucursal {
-  id_sucursal       Int               @id @default(autoincrement())
-  nombre            String?           @db.VarChar(45)
-  direccion         String?           @db.VarChar(45)
-  estado            String?           @db.VarChar(10)
+  id_sucursal       Int              @id @default(autoincrement())
+  nombre            String?          @db.VarChar(45)
+  direccion         String?          @db.VarChar(45)
+  estado            String?          @db.VarChar(10)
   usuarios          Usuario[]
   gastos_operativos GastoOperativo[]
   inventarios       Inventario[]
@@ -57,12 +56,12 @@ model Usuario {
 }
 
 model GastoOperativo {
-  id_gasto_operativo Int      @id @default(autoincrement())
+  id_gasto_operativo Int       @id @default(autoincrement())
   sucursal_id        Int
-  concepto           String   @db.VarChar(20)
-  monto              Decimal  @db.Decimal(10, 2)
+  concepto           String    @db.VarChar(20)
+  monto              Decimal   @db.Decimal(10, 2)
   fecha              DateTime? @default(now()) @db.Timestamptz
-  sucursal           Sucursal @relation(fields: [sucursal_id], references: [id_sucursal], onDelete: Cascade)
+  sucursal           Sucursal  @relation(fields: [sucursal_id], references: [id_sucursal], onDelete: Cascade)
 
   @@map("gasto_operativo")
 }
