@@ -11,6 +11,41 @@ datasource db {
   provider = "postgresql"
 }
 
+enum RolUsuario {
+  ADMIN
+  VENDEDOR
+}
+
+enum EstadoPedido {
+  PENDIENTE
+  PAGADO
+  ENTREGADO
+  CANCELADO
+}
+
+enum OrigenPedido {
+  E_COMMERCE
+  POS_TIENDA
+}
+
+enum MetodoPago {
+  QR
+  TARJETA
+  EFECTIVO
+}
+
+enum PasarelaPago {
+  PAGOSNET
+  LIBELULA
+  NA
+}
+
+enum EstadoPago {
+  PENDIENTE
+  COMPLETADO
+  FALLIDO
+}
+
 model Sucursal {
   id_sucursal       Int              @id @default(autoincrement())
   nombre            String?          @db.VarChar(45)
@@ -45,8 +80,8 @@ model Categoria {
 model Usuario {
   id_usuario    Int      @id @default(autoincrement())
   sucursal_id   Int
-  nombre        String?  @db.VarChar(100)
-  rol           String?  @db.VarChar(20)
+  nombre        String?     @db.VarChar(100)
+  rol           RolUsuario?
   email         String?  @unique @db.VarChar(100)
   password_hash String?  @db.VarChar(255)
   sucursal      Sucursal @relation(fields: [sucursal_id], references: [id_sucursal], onDelete: Cascade)
@@ -98,8 +133,8 @@ model Pedido {
   cliente_id Int
   usuario_id Int?
   fecha      DateTime?       @default(now()) @db.Timestamptz
-  estado     String?         @db.VarChar(50)
-  origen     String?         @db.VarChar(50)
+  estado     EstadoPedido?
+  origen     OrigenPedido?
   total      Decimal         @db.Decimal(10, 2)
   cliente    Cliente         @relation(fields: [cliente_id], references: [id_cliente], onDelete: Cascade)
   usuario    Usuario?        @relation(fields: [usuario_id], references: [id_usuario], onDelete: Restrict)
@@ -112,10 +147,10 @@ model Pedido {
 model Pago {
   id_pago                 Int       @id @default(autoincrement())
   pedido_id               Int
-  metodo                  String?   @db.VarChar(25)
-  pasarela                String?   @db.VarChar(25)
-  id_transaccion_pasarela String?   @db.VarChar(50)
-  estado_pago             String?   @db.VarChar(25)
+  metodo                  MetodoPago?
+  pasarela                PasarelaPago?
+  id_transaccion_pasarela String?       @db.VarChar(50)
+  estado_pago             EstadoPago?
   comprobante_url         String?   @db.VarChar(255)
   fecha_pago              DateTime? @db.Timestamptz
   pedido                  Pedido    @relation(fields: [pedido_id], references: [id_pedido], onDelete: Cascade)

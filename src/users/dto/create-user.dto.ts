@@ -1,4 +1,5 @@
-import { IsInt, IsString, IsEmail, IsOptional, MaxLength } from 'class-validator';
+import { IsInt, IsString, IsEmail, IsOptional, MaxLength, IsEnum } from 'class-validator';
+import { RolUsuario } from '@prisma/client';
 
 export class CreateUserDto {
   @IsInt()
@@ -9,10 +10,9 @@ export class CreateUserDto {
   @MaxLength(100)
   nombre?: string;
 
-  @IsString()
+  @IsEnum(RolUsuario)
   @IsOptional()
-  @MaxLength(20)
-  rol?: string;
+  rol?: RolUsuario;
 
   @IsEmail()
   @IsOptional()

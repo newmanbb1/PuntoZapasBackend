@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, RolUsuario } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 import * as bcrypt from 'bcrypt';
@@ -34,7 +34,7 @@ async function main() {
     data: {
       sucursal_id: sucursal.id_sucursal,
       nombre: 'Administrador',
-      rol: 'Admin',
+      rol: RolUsuario.ADMIN,
       email: 'admin@ejemplo.com',
       password_hash
     }
