@@ -40,9 +40,25 @@ async function main() {
     }
   });
 
+  // 4. Crear el usuario vendedor
+  console.log('Creando Usuario Vendedor...');
+  const saltVendedor = await bcrypt.genSalt();
+  const passwordHashVendedor = await bcrypt.hash('vendedor123', saltVendedor);
+
+  const vendedor = await prisma.usuario.create({
+    data: {
+      sucursal_id: sucursal.id_sucursal,
+      nombre: 'Vendedor Prueba',
+      rol: RolUsuario.VENDEDOR,
+      email: 'vendedor@ejemplo.com',
+      password_hash: passwordHashVendedor
+    }
+  });
+
   console.log('¡Seeder completado!');
   console.log('Sucursal ID:', sucursal.id_sucursal);
   console.log('Usuario Admin ID:', admin.id_usuario);
+  console.log('Usuario Vendedor ID:', vendedor.id_usuario);
 }
 
 main()
