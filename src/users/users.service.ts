@@ -1,12 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { UsersRepository } from './users.repository';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly usersRepository: UsersRepository) {}
 
   async create(createUserDto: CreateUserDto) {
     let { password_hash, ...rest } = createUserDto;
@@ -16,37 +16,18 @@ export class UsersService {
       password_hash = await bcrypt.hash(password_hash, salt);
     }
 
-    return this.prisma.usuario.create({
-      data: {
-        ...rest,
-        password_hash,
-      },
+    return this.usersRepository.create({
+      ...rest,
+      password_hash,
     });
   }
 
   findAll() {
-    return this.prisma.usuario.findMany({
-      select: {
-        id_usuario: true,
-        sucursal_id: true,
-        nombre: true,
-        rol: true,
-        email: true,
-      }
-    });
+    return this.usersRepository.findAll();
   }
 
   async findOne(id: number) {
-    const user = await this.prisma.usuario.findUnique({
-      where: { id_usuario: id },
-      select: {
-        id_usuario: true,
-        sucursal_id: true,
-        nombre: true,
-        rol: true,
-        email: true,
-      }
-    });
+    const user = await this.usersRepository.findOne(id);
 
     if (!user) {
       throw new NotFoundException(`Usuario con ID ${id} no encontrado`);
@@ -65,10 +46,7 @@ export class UsersService {
     }
 
     try {
-      return await this.prisma.usuario.update({
-        where: { id_usuario: id },
-        data,
-      });
+      return await this.usersRepository.update(id, data);
     } catch (error) {
       throw new NotFoundException(`Usuario con ID ${id} no encontrado`);
     }
@@ -76,9 +54,7 @@ export class UsersService {
 
   async remove(id: number) {
     try {
-      return await this.prisma.usuario.delete({
-        where: { id_usuario: id },
-      });
+      return await this.usersRepository.remove(id);
     } catch (error) {
       throw new NotFoundException(`Usuario con ID ${id} no encontrado`);
     }
