@@ -1,30 +1,80 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateProductoDto } from './dto/create-producto.dto';
 import { UpdateProductoDto } from './dto/update-producto.dto';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class ProductosService {
-  // Inyectamos Prisma en el constructor
   constructor(private prisma: PrismaService) {}
 
-  create(createProductoDto: CreateProductoDto) {
-    return 'This action adds a new producto';
+  async create(createProductoDto: CreateProductoDto) {
+    return this.prisma.producto.create({
+      data: createProductoDto,
+    });
   }
 
-  findAll() {
-    return `This action returns all productos`;
+  async findAll(page: number = 1, limit: number = 20) {
+    const skip = (page - 1) * limit;
+    
+    const [data, total] = await Promise.all([
+      this.prisma.producto.findMany({
+        skip,
+        take: limit,
+        include: {
+          categoria: true,
+          variantes: {
+            include: {
+              inventarios: true
+            }
+          }
+        }
+      }),
+      this.prisma.producto.count()
+    ]);
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        lastPage: Math.ceil(total / limit)
+      }
+    };
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} producto`;
+  async findOne(id: number) {
+    const producto = await this.prisma.producto.findUnique({
+      where: { id_producto: id },
+      include: {
+        categoria: true,
+        variantes: {
+          include: {
+            inventarios: true
+          }
+        }
+      }
+    });
+
+    if (!producto) {
+      throw new NotFoundException(`Producto #${id} no encontrado`);
+    }
+
+    return producto;
   }
 
-  update(id: number, updateProductoDto: UpdateProductoDto) {
-    return `This action updates a #${id} producto`;
+  async update(id: number, updateProductoDto: UpdateProductoDto) {
+    await this.findOne(id);
+    return this.prisma.producto.update({
+      where: { id_producto: id },
+      data: updateProductoDto,
+    });
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} producto`;
+  async remove(id: number) {
+    await this.findOne(id);
+    return this.prisma.producto.delete({
+      where: { id_producto: id },
+    });
   }
 }

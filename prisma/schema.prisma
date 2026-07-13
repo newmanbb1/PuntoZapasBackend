@@ -4,8 +4,8 @@
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
+  engineType = "binary"
 }
 
 datasource db {
@@ -75,9 +75,12 @@ model Producto {
   costo_adquisicion Decimal            @db.Decimal(10, 2)
   precio_venta      Decimal            @db.Decimal(10, 2)
   descripcion       String?            @db.VarChar(100)
+  imagenes          String[]
   categoria         Categoria          @relation(fields: [categoria_id], references: [id_categoria], onDelete: Cascade)
   variantes         VarianteProducto[]
 
+  @@index([marca])
+  @@index([categoria_id])
   @@map("producto")
 }
 
