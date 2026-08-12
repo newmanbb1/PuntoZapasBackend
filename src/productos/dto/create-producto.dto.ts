@@ -1,5 +1,5 @@
-import { IsString, IsNumber, IsOptional, IsArray, Min, MaxLength, IsNotEmpty } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsString, IsNumber, IsOptional, IsArray, Min, MaxLength, IsNotEmpty, IsBoolean } from 'class-validator';
+import { Type, Transform } from 'class-transformer';
 
 export class CreateProductoDto {
   @IsNumber()
@@ -36,4 +36,34 @@ export class CreateProductoDto {
   @IsString({ each: true })
   @IsOptional()
   imagenes?: string[];
+
+  @IsBoolean()
+  @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
+  en_oferta?: boolean;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(2)
+  talla?: string;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(15)
+  color?: string;
+
+  @IsNumber()
+  @IsOptional()
+  @Type(() => Number)
+  sucursal_id?: number;
+
+  @IsNumber()
+  @IsOptional()
+  @Type(() => Number)
+  cantidad?: number;
+
+  @IsNumber()
+  @IsOptional()
+  @Type(() => Number)
+  nivel_minimo?: number;
 }

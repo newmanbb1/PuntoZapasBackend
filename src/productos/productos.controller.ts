@@ -14,7 +14,7 @@ export class ProductosController {
   ) {}
 
   @Post()
-  @UseInterceptors(FilesInterceptor('imagenes', 5, {
+  @UseInterceptors(FilesInterceptor('imagenes', 36, {
     storage: memoryStorage(),
   }))
   async create(
@@ -29,8 +29,13 @@ export class ProductosController {
   }
 
   @Get()
-  findAll(@Query('page') page: string = '1', @Query('limit') limit: string = '20') {
-    return this.productosService.findAll(Number(page), Number(limit));
+  findAll(
+    @Query('page') page: string = '1',
+    @Query('limit') limit: string = '20',
+    @Query('en_oferta') enOferta?: string,
+  ) {
+    const ofertaFilter = enOferta === 'true' ? true : enOferta === 'false' ? false : undefined;
+    return this.productosService.findAll(Number(page), Number(limit), ofertaFilter);
   }
 
   @Get(':id')
@@ -39,7 +44,20 @@ export class ProductosController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateProductoDto: UpdateProductoDto) {
+  @UseInterceptors(FilesInterceptor('imagenes', 36, {
+    storage: memoryStorage(),
+  }))
+  async update(
+    @Param('id') id: string,
+    @Body() updateProductoDto: UpdateProductoDto,
+    @UploadedFiles() files: Express.Multer.File[],
+  ) {
+    if (files && files.length > 0) {
+      const uploadPromises = files.map(file => this.uploadsService.uploadFile(file));
+      const newImages = await Promise.all(uploadPromises);
+      const existing = updateProductoDto.imagenes ?? [];
+      updateProductoDto.imagenes = [...existing, ...newImages];
+    }
     return this.productosService.update(+id, updateProductoDto);
   }
 

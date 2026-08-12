@@ -36,8 +36,7 @@ export class UploadsService {
         streamifier.createReadStream(file.buffer).pipe(uploadStream);
       });
     } else {
-      // Fallback a almacenamiento local
-      const uploadPath = join(__dirname, '..', '..', 'uploads', 'productos');
+      const uploadPath = join(process.cwd(), 'uploads', 'productos');
       if (!fs.existsSync(uploadPath)) {
         fs.mkdirSync(uploadPath, { recursive: true });
       }

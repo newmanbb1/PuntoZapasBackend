@@ -76,6 +76,7 @@ model Producto {
   precio_venta      Decimal            @db.Decimal(10, 2)
   descripcion       String?            @db.VarChar(100)
   imagenes          String[]
+  en_oferta         Boolean            @default(false)
   categoria         Categoria          @relation(fields: [categoria_id], references: [id_categoria], onDelete: Cascade)
   variantes         VarianteProducto[]
 

@@ -8,8 +8,10 @@ import helmet from 'helmet';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   
-  // Seguridad: Cabeceras HTTP seguras
-  app.use(helmet());
+  // Seguridad: Cabeceras HTTP seguras (permitir imágenes cross-origin para el frontend)
+  app.use(helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+  }));
   
   // Habilitar CORS de manera estricta
   app.enableCors({

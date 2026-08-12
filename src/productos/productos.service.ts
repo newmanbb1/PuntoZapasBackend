@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { CreateProductoDto } from './dto/create-producto.dto';
 import { UpdateProductoDto } from './dto/update-producto.dto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -7,29 +7,70 @@ import { PrismaService } from '../prisma/prisma.service';
 export class ProductosService {
   constructor(private prisma: PrismaService) {}
 
+  private buildSku(marca: string, modelo: string, talla: string, color: string): string {
+    const prefix = `${marca}-${modelo}-${talla}-${color}`
+      .replace(/[^a-zA-Z0-9]/g, '-')
+      .toUpperCase()
+      .slice(0, 45);
+    return `${prefix}-${Date.now().toString(36).slice(-4)}`;
+  }
+
   async create(createProductoDto: CreateProductoDto) {
+    const { talla, color, sucursal_id, cantidad, nivel_minimo, ...productData } = createProductoDto;
+
+    if (!talla || !color || !sucursal_id) {
+      throw new BadRequestException('Debe indicar talla, color y sucursal para crear el inventario inicial');
+    }
+
+    const sku = this.buildSku(productData.marca, productData.modelo, talla, color);
+
     return this.prisma.producto.create({
-      data: createProductoDto,
+      data: {
+        ...productData,
+        en_oferta: productData.en_oferta ?? false,
+        variantes: {
+          create: [{
+            talla,
+            color,
+            sku,
+            inventarios: {
+              create: [{
+                sucursal_id,
+                cantidad: cantidad ?? 0,
+                nivel_minimo: nivel_minimo ?? 5,
+              }],
+            },
+          }],
+        },
+      },
+      include: {
+        categoria: true,
+        variantes: {
+          include: { inventarios: true },
+        },
+      },
     });
   }
 
-  async findAll(page: number = 1, limit: number = 20) {
+  async findAll(page: number = 1, limit: number = 20, enOferta?: boolean) {
     const skip = (page - 1) * limit;
-    
+    const where = enOferta !== undefined ? { en_oferta: enOferta } : undefined;
+
     const [data, total] = await Promise.all([
       this.prisma.producto.findMany({
+        where,
         skip,
         take: limit,
         include: {
           categoria: true,
           variantes: {
             include: {
-              inventarios: true
-            }
-          }
-        }
+              inventarios: true,
+            },
+          },
+        },
       }),
-      this.prisma.producto.count()
+      this.prisma.producto.count({ where }),
     ]);
 
     return {
@@ -38,8 +79,8 @@ export class ProductosService {
         total,
         page,
         limit,
-        lastPage: Math.ceil(total / limit)
-      }
+        lastPage: Math.ceil(total / limit),
+      },
     };
   }
 
@@ -50,10 +91,10 @@ export class ProductosService {
         categoria: true,
         variantes: {
           include: {
-            inventarios: true
-          }
-        }
-      }
+            inventarios: true,
+          },
+        },
+      },
     });
 
     if (!producto) {
@@ -68,6 +109,12 @@ export class ProductosService {
     return this.prisma.producto.update({
       where: { id_producto: id },
       data: updateProductoDto,
+      include: {
+        categoria: true,
+        variantes: {
+          include: { inventarios: true },
+        },
+      },
     });
   }
 
