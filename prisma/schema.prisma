@@ -77,6 +77,8 @@ model Producto {
   descripcion       String?            @db.VarChar(100)
   imagenes          String[]
   en_oferta         Boolean            @default(false)
+  video_url         String?            @db.VarChar(512)
+  video_card_url    String?            @db.VarChar(512)
   categoria         Categoria          @relation(fields: [categoria_id], references: [id_categoria], onDelete: Cascade)
   variantes         VarianteProducto[]
 

@@ -16,7 +16,7 @@ export class ProductosService {
   }
 
   async create(createProductoDto: CreateProductoDto) {
-    const { talla, color, sucursal_id, cantidad, nivel_minimo, ...productData } = createProductoDto;
+    const { talla, color, sucursal_id, cantidad, nivel_minimo, remove_video, ...productData } = createProductoDto;
 
     if (!talla || !color || !sucursal_id) {
       throw new BadRequestException('Debe indicar talla, color y sucursal para crear el inventario inicial');
@@ -106,9 +106,14 @@ export class ProductosService {
 
   async update(id: number, updateProductoDto: UpdateProductoDto) {
     await this.findOne(id);
+    const { talla, color, sucursal_id, cantidad, nivel_minimo, remove_video, ...data } = updateProductoDto;
+    if (remove_video) {
+      data.video_url = null as any;
+      data.video_card_url = null as any;
+    }
     return this.prisma.producto.update({
       where: { id_producto: id },
-      data: updateProductoDto,
+      data,
       include: {
         categoria: true,
         variantes: {

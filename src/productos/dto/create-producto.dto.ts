@@ -44,6 +44,21 @@ export class CreateProductoDto {
 
   @IsString()
   @IsOptional()
+  @MaxLength(512)
+  video_url?: string;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(512)
+  video_card_url?: string;
+
+  @IsBoolean()
+  @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
+  remove_video?: boolean;
+
+  @IsString()
+  @IsOptional()
   @MaxLength(2)
   talla?: string;
 
