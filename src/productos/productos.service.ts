@@ -2,10 +2,15 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { CreateProductoDto } from './dto/create-producto.dto';
 import { UpdateProductoDto } from './dto/update-producto.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { AppCacheService } from '../common/cache/app-cache.service';
+import { CACHE_KEYS, CACHE_TTL_MS } from '../common/cache/cache-keys';
 
 @Injectable()
 export class ProductosService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private appCache: AppCacheService,
+  ) {}
 
   private buildSku(marca: string, modelo: string, talla: string, color: string): string {
     const prefix = `${marca}-${modelo}-${talla}-${color}`
@@ -24,7 +29,7 @@ export class ProductosService {
 
     const sku = this.buildSku(productData.marca, productData.modelo, talla, color);
 
-    return this.prisma.producto.create({
+    const created = await this.prisma.producto.create({
       data: {
         ...productData,
         en_oferta: productData.en_oferta ?? false,
@@ -49,6 +54,33 @@ export class ProductosService {
           include: { inventarios: true },
         },
       },
+    });
+
+    await this.appCache.invalidateCatalog();
+    return created;
+  }
+
+  async findCatalog(enOferta?: boolean) {
+    const cacheKey = CACHE_KEYS.catalog(enOferta);
+    return this.appCache.getOrSet(cacheKey, CACHE_TTL_MS.catalog, async () => {
+      const where = enOferta !== undefined ? { en_oferta: enOferta } : undefined;
+      const data = await this.prisma.producto.findMany({
+        where,
+        select: {
+          id_producto: true,
+          modelo: true,
+          marca: true,
+          precio_venta: true,
+          descripcion: true,
+          imagenes: true,
+          en_oferta: true,
+          video_url: true,
+          video_card_url: true,
+          categoria: { select: { id_categoria: true, nombre: true } },
+        },
+        orderBy: { id_producto: 'desc' },
+      });
+      return { data };
     });
   }
 
@@ -85,33 +117,35 @@ export class ProductosService {
   }
 
   async findOne(id: number) {
-    const producto = await this.prisma.producto.findUnique({
-      where: { id_producto: id },
-      include: {
-        categoria: true,
-        variantes: {
-          include: {
-            inventarios: true,
+    return this.appCache.getOrSet(CACHE_KEYS.producto(id), CACHE_TTL_MS.producto, async () => {
+      const producto = await this.prisma.producto.findUnique({
+        where: { id_producto: id },
+        include: {
+          categoria: true,
+          variantes: {
+            include: {
+              inventarios: true,
+            },
           },
         },
-      },
+      });
+
+      if (!producto) {
+        throw new NotFoundException(`Producto #${id} no encontrado`);
+      }
+
+      return producto;
     });
-
-    if (!producto) {
-      throw new NotFoundException(`Producto #${id} no encontrado`);
-    }
-
-    return producto;
   }
 
   async update(id: number, updateProductoDto: UpdateProductoDto) {
-    await this.findOne(id);
+    await this.ensureExists(id);
     const { talla, color, sucursal_id, cantidad, nivel_minimo, remove_video, ...data } = updateProductoDto;
     if (remove_video) {
       data.video_url = null as any;
       data.video_card_url = null as any;
     }
-    return this.prisma.producto.update({
+    const updated = await this.prisma.producto.update({
       where: { id_producto: id },
       data,
       include: {
@@ -121,12 +155,26 @@ export class ProductosService {
         },
       },
     });
+    await this.appCache.invalidateProducto(id);
+    return updated;
   }
 
   async remove(id: number) {
-    await this.findOne(id);
-    return this.prisma.producto.delete({
+    await this.ensureExists(id);
+    const deleted = await this.prisma.producto.delete({
       where: { id_producto: id },
     });
+    await this.appCache.invalidateProducto(id);
+    return deleted;
+  }
+
+  private async ensureExists(id: number) {
+    const exists = await this.prisma.producto.findUnique({
+      where: { id_producto: id },
+      select: { id_producto: true },
+    });
+    if (!exists) {
+      throw new NotFoundException(`Producto #${id} no encontrado`);
+    }
   }
 }

@@ -7,7 +7,12 @@ import { Pool } from 'pg';
 export class PrismaService extends PrismaClient implements OnModuleInit {
   constructor() {
     const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:admin@localhost:5432/punto_zapas?schema=public';
-    const pool = new Pool({ connectionString });
+    const pool = new Pool({
+      connectionString,
+      max: 10,
+      idleTimeoutMillis: 30_000,
+      connectionTimeoutMillis: 5_000,
+    });
     const adapter = new PrismaPg(pool);
     super({
       adapter,

@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Body, Put, Param, Delete, UseGuards } from '@nestjs/common';
+import { SkipThrottle } from '@nestjs/throttler';
 import { CategoriasService } from './categorias.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
@@ -12,6 +13,7 @@ export class CategoriasController {
     return this.categoriasService.create(data);
   }
 
+  @SkipThrottle()
   @Get()
   findAll() {
     return this.categoriasService.findAll();

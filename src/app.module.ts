@@ -19,16 +19,18 @@ import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { ClientesModule } from './clientes/clientes.module';
 import { UploadsModule } from './uploads/uploads.module';
+import { AppCacheModule } from './common/cache/app-cache.module';
 
 @Module({
   imports: [
+    AppCacheModule,
     ServeStaticModule.forRoot({
       rootPath: join(process.cwd(), 'uploads'),
       serveRoot: '/uploads',
     }),
     ThrottlerModule.forRoot([{
       ttl: 60000,
-      limit: 100, // global limit 100 requests per minute
+      limit: 200,
     }]),
     CacheModule.register({
       isGlobal: true,

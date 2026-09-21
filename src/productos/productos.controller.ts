@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, UploadedFiles, Query } from '@nestjs/common';
+import { SkipThrottle, Throttle } from '@nestjs/throttler';
 import { ProductosService } from './productos.service';
 import { CreateProductoDto } from './dto/create-producto.dto';
 import { UpdateProductoDto } from './dto/update-producto.dto';
@@ -18,6 +19,7 @@ export class ProductosController {
     private readonly uploadsService: UploadsService
   ) {}
 
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @Post()
   @UseInterceptors(FileFieldsInterceptor([
     { name: 'imagenes', maxCount: 36 },
@@ -31,6 +33,13 @@ export class ProductosController {
     return this.productosService.create(createProductoDto);
   }
 
+  @SkipThrottle()
+  @Get('catalogo')
+  findCatalog(@Query('en_oferta') enOferta?: string) {
+    const ofertaFilter = enOferta === 'true' ? true : enOferta === 'false' ? false : undefined;
+    return this.productosService.findCatalog(ofertaFilter);
+  }
+
   @Get()
   findAll(
     @Query('page') page: string = '1',
@@ -41,11 +50,13 @@ export class ProductosController {
     return this.productosService.findAll(Number(page), Number(limit), ofertaFilter);
   }
 
+  @SkipThrottle()
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.productosService.findOne(+id);
   }
 
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @Patch(':id')
   @UseInterceptors(FileFieldsInterceptor([
     { name: 'imagenes', maxCount: 36 },
@@ -60,6 +71,7 @@ export class ProductosController {
     return this.productosService.update(+id, updateProductoDto);
   }
 
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.productosService.remove(+id);
